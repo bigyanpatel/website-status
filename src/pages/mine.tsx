@@ -1,56 +1,28 @@
-import { FC, useState, useEffect, useContext } from 'react';
+import { FC, useState, useEffect } from 'react';
 import Head from '@/components/head';
 import Layout from '@/components/Layout';
 import Card from '@/components/tasks/card';
 import useFetch from '@/hooks/useFetch';
 import classNames from '@/styles/tasks.module.scss';
 import task from '@/interfaces/task.type';
-import { toast, ToastTypes } from '@/helperFunctions/toast';
-import { useAppContext } from '@/context';
-import { isUserAuthorizedContext } from '@/context/isUserAuthorized';
-import fetch from '@/helperFunctions/fetch';
 
 const TASKS_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/tasks/self`;
-const { SUCCESS, ERROR } = ToastTypes;
 
-async function updateCardContent(id: string, cardDetails: task) {
-  try {
-    const { requestPromise } = fetch({
-      url: `${TASKS_URL}/${id}`,
-      method: 'patch',
-      data: cardDetails,
-    });
-    await requestPromise;
-    toast(SUCCESS, 'Changes have been saved !');
-  } catch (err: any) {
-    if ('response' in err) {
-      toast(ERROR, err.response.data.message);
-      return;
-    }
-    toast(ERROR, err.message);
-  }
-}
-
-function CardList(tasks: task[], isEditable: boolean) {
+function CardList(tasks: task[]) {
   return tasks.map(
     (item: task) => (
       <Card
         content={item}
         key={item.id}
-        shouldEdit={isEditable}
-        onContentChange={async (id: string, newDetails: any) => isEditable
-          && updateCardContent(id, newDetails)}
+        shouldEdit={false}
+        onContentChange={undefined}
       />
     ),
   );
 }
 
 const Mine: FC = () => {
-  const { state: appState } = useAppContext();  
   const [tasks, setTasks] = useState<task[]>([]);
-  const { isEditMode } = appState;
-  const isUserAuthorized = useContext(isUserAuthorizedContext);
-  const isEditable = isEditMode;
   const {
     response,
     error,
@@ -87,7 +59,7 @@ const Mine: FC = () => {
                   tasks.length > 0
                     ? (
                       <div>
-                        {CardList(tasks, isEditable)}
+                        {CardList(tasks)}
                       </div>
                     ) : (!error && 'No Tasks Found')
                 }

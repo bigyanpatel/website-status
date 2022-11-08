@@ -8,7 +8,6 @@ import task from '@/interfaces/task.type';
 import { AVAILABLE, BLOCKED, COMPLETED, VERIFIED } from '@/components/constants/beautified-task-status';
 import { ALT_KEY } from '@/components/constants/key';
 import classNames from '@/components/tasks/card/card.module.scss';
-import { useRouter } from 'next/router';
 
 const moment = require('moment');
 
@@ -23,16 +22,9 @@ const Card: FC<Props> = ({
   shouldEdit = false,
   onContentChange = () => undefined,
 }) => {
-  const router = useRouter();
   const statusRedList = [BLOCKED];
   const statusNotOverDueList = [COMPLETED, VERIFIED, AVAILABLE];
   const cardDetails = content;
-  const [editTitle, setEditTitle] = useState(false);
-  const [editStatus, setEditStatus] = useState(false);
-  const [editStartedOn, setEditStartedOn] = useState(false);
-  const [editEndsOn, setEditEndsOn] = useState(false);
-  const [editAssignee, setEditAssignee] = useState(false);
-  const [editProgress, setEditProgress] = useState(false);
   const [assigneeProfilePic, setAssigneeProfilePic] = useState(
     `${process.env.NEXT_PUBLIC_GITHUB_IMAGE_URL}/${cardDetails.assignee}/img.png`,
   );
@@ -42,32 +34,10 @@ const Card: FC<Props> = ({
   useEffect(() => {
     const isAltKeyLongPressed = keyLongPressed === ALT_KEY;
     if (isAltKeyLongPressed) {
-      setShowEditButton(!showEditButton)
+      setShowEditButton(true)
     }
   }, [keyLongPressed]);
-  useEffect(() => {
-    if(shouldEdit){
-      if(!isUserAuthorized){
-        setEditTitle(true);
-        setEditStatus(true);  
-        setEditProgress(true);
-      } else{
-        setEditTitle(true);
-        setEditStatus(true);  
-        setEditProgress(true);
-        setEditEndsOn(true);
-        setEditStartedOn(true);
-        setEditAssignee(true);
-      }
-    } else{
-      setEditTitle(false);
-      setEditStatus(false);  
-      setEditProgress(false);
-      setEditEndsOn(false);
-      setEditStartedOn(false);
-      setEditAssignee(false);
-    }
-  },[shouldEdit])
+  
   const context = useAppContext() ;
   const { actions } = context || {}
 
@@ -104,10 +74,6 @@ const Card: FC<Props> = ({
       if (changedProperty === 'endsOn' || changedProperty === 'startedOn') {
         const toTimeStamp = new Date(`${event.target.value}`).getTime() / 1000;
         toChange[changedProperty] = toTimeStamp;
-      }
-
-      if(changedProperty === 'percentCompleted'){
-        toChange[changedProperty] = parseInt(event.target.innerHTML);
       }
 
       onContentChange(toChange.id, {
@@ -178,16 +144,6 @@ const Card: FC<Props> = ({
     actions.onEditRoute()
   }
 
-  const editButtonCheck = () => {
-    if(isUserAuthorized && showEditButton){
-      return true;
-    } else if(router.route === '/mine'){
-      return true;
-    } else{
-      return false;
-    }
-  }
-
   return (
     <div
       className={`
@@ -198,7 +154,7 @@ const Card: FC<Props> = ({
       <div className={classNames.cardItems}>
         <span
           className={classNames.cardTitle}
-          contentEditable={editTitle}
+          contentEditable={shouldEdit}
           onKeyPress={(e) => handleChange(e, 'title')}
           role="button"
           tabIndex={0}
@@ -209,7 +165,7 @@ const Card: FC<Props> = ({
           <span className={classNames.cardSpecialFont}>Status:</span>
           <span
             className={classNames.cardStatusFont}
-            contentEditable={editStatus}
+            contentEditable={shouldEdit}
             onKeyPress={(e) => handleChange(e, 'status')}
             style={{ color: statusFontColor }}
             role="button"
@@ -228,7 +184,7 @@ const Card: FC<Props> = ({
             height={iconHeight}
           />
           <span className={classNames.cardSpecialFont}>Due Date</span>  
-            {renderDate(fromNowEndsOn,editEndsOn)}      
+            {renderDate(fromNowEndsOn,shouldEdit)}      
         </span>
       </div>
       <div className={classNames.cardItems}>
@@ -243,43 +199,27 @@ const Card: FC<Props> = ({
             </div>
           </div>
           <span>
-            <span
-              className={classNames.cardStrongFont}
-              contentEditable={editProgress}
-              onKeyPress={(e) => handleChange(e, 'percentCompleted')}
-              role="button"
-              tabIndex={0}
-            >
-              {content.percentCompleted}
-            </span>
-            <span>
-              % completed
-            </span>
+            {content.percentCompleted}% completed
           </span>
         </span>
       </div>
       <div className={classNames.cardItems}>
         <span
           className={classNames.cardSpecialFont}
+          contentEditable={shouldEdit}
+          onKeyPress={(e) => handleChange(e, 'startedOn')}
+          role="button"
+          tabIndex={0}
         >
-          <span>
-            Started
-            {' '}
-          </span>
-          <span
-            contentEditable={editStartedOn}
-            onKeyPress={(e) => handleChange(e, 'startedOn')}
-            role="button"
-            tabIndex={0}
-          >
-            {fromNowStartedOn}
-          </span>
+          Started
+          {' '}
+          {fromNowStartedOn}
         </span>
         <span>
           <span className={classNames.cardSpecialFont}>Assignee:</span>
           <span
             className={classNames.cardStrongFont}
-            contentEditable={editAssignee}
+            contentEditable={shouldEdit}
             onKeyPress={(e) => handleChange(e, 'assignee')}
             role="button"
             tabIndex={0}
@@ -299,7 +239,7 @@ const Card: FC<Props> = ({
           </span>
         </span>
       </div>
-      {editButtonCheck() &&  
+      {isUserAuthorized && showEditButton &&
         <div className={classNames.editButton}>
           <Image src='/pencil.webp'
             alt='edit Pencil'
